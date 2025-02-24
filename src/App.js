@@ -1,25 +1,30 @@
-import logo from './logo.svg';
+
+import { useState } from 'react';
 import './App.css';
+import { TimerProvider } from './context/TimerContext';
+import Timer from './components/Timer';
 
 function App() {
+  const [isRunning, setIsRunning] = useState(false);
+
+  const handleStart = () => {
+    setIsRunning(!isRunning);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <TimerProvider>
+      <div className="App">
+        <header className="App-header">
+          <h1>HIIT Timer</h1>
+          <button onClick={handleStart}>
+            {isRunning ? 'Pause' : 'Start'}
+          </button>
+          <Timer />
+        </header>
+      </div>
+    </TimerProvider>
   );
 }
 
 export default App;
+      
