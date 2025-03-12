@@ -3,7 +3,8 @@
 
 /*
 <ai_context>
-File is responsible for the multi-step workout creation wizard of "My Workout" app, including placeholders for voice-to-text input, skipping steps, and final submission.
+File is responsible for the multi-step workout creation wizard of "My Workout" app,
+previously just logging data. Now we POST to /api/plans to create a real plan in the database.
 </ai_context>
 */
 
@@ -20,6 +21,9 @@ export default function WorkoutWizardPage() {
   const router = useRouter();
 
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
   const [formData, setFormData] = useState<WizardData>({
     name: "",
     goals: "",
@@ -72,7 +76,7 @@ export default function WorkoutWizardPage() {
   ];
 
   const isLastStep = step === steps.length;
-  
+
   const handleNext = () => {
     if (step < steps.length) {
       setStep((prev) => prev + 1);
@@ -89,15 +93,41 @@ export default function WorkoutWizardPage() {
     handleNext();
   };
 
-  const handleSubmit = () => {
-    console.log("Wizard Data:", formData);
-    // After user finishes wizard, navigate to a placeholder workout session page
-    router.push("/workout/session");
+  const handleSubmit = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Hardcoded userId = 1 for now
+          userId: 1,
+          name: formData.name,
+          goals: formData.goals,
+          equipment: formData.equipment
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create workout plan");
+      }
+
+      // We could parse the created plan if needed, or just navigate
+      // const createdPlan = await res.json();
+
+      router.push("/workout/session");
+    } catch (err) {
+      setError("Unable to create plan. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen p-4 flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Workout Creation Wizard</h1>
+
       {isLastStep ? (
         <div className="border rounded p-4">
           <h2 className="text-xl font-semibold mb-2">Confirm Your Workout</h2>
@@ -110,15 +140,20 @@ export default function WorkoutWizardPage() {
           <p className="mb-4">
             <strong>Equipment:</strong> {formData.equipment}
           </p>
+
+          {error && <p className="text-red-500 mb-2">{error}</p>}
+
           <button
             onClick={handleSubmit}
-            className="bg-foreground text-background px-4 py-2 rounded hover:opacity-80"
+            className="bg-foreground text-background px-4 py-2 rounded hover:opacity-80 disabled:opacity-50"
+            disabled={submitting}
           >
             Submit
           </button>
           <button
             onClick={handleBack}
             className="bg-gray-300 px-3 py-1 rounded ml-2"
+            disabled={submitting}
           >
             Back
           </button>
@@ -130,7 +165,7 @@ export default function WorkoutWizardPage() {
           <div className="flex justify-between mt-4">
             <button
               onClick={handleBack}
-              disabled={step === 0}
+              disabled={step === 0 || submitting}
               className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
             >
               Back
@@ -138,13 +173,15 @@ export default function WorkoutWizardPage() {
             <div className="flex gap-2">
               <button
                 onClick={handleSkip}
-                className="bg-gray-300 px-3 py-1 rounded"
+                className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
+                disabled={submitting}
               >
                 Skip
               </button>
               <button
                 onClick={handleNext}
-                className="bg-foreground text-background px-4 py-1 rounded hover:opacity-80"
+                className="bg-foreground text-background px-4 py-1 rounded hover:opacity-80 disabled:opacity-50"
+                disabled={submitting}
               >
                 Next
               </button>
@@ -155,4 +192,3 @@ export default function WorkoutWizardPage() {
     </div>
   );
 }
-      
