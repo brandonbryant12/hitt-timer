@@ -4,10 +4,12 @@
 /*
 <ai_context>
 File is responsible for the main workout session interface of "My Workout" app, including real-time exercise cues, voice notes, and navigation.
+This file is updated to demonstrate Whisper WASM client-side integration for offline voice-to-text.
 </ai_context>
 */
 
 import { useState } from "react";
+import { useWhisper } from "@/hooks/useWhisper";
 
 interface Exercise {
   id: number;
@@ -27,15 +29,39 @@ export default function WorkoutSessionPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentExercise = exercises[currentIndex];
 
-  // placeholder for voice note input
-  const [voiceNotes, setVoiceNotes] = useState<Record<number, string>>({});
-
   // placeholder for dynamic LLM-generated exercise cues
-  const [exerciseCues, setExerciseCues] = useState<Record<number, string>>({
+  const [exerciseCues] = useState<Record<number, string>>({
     1: "Keep your chest up",
     2: "Brace your core",
     3: "Maintain a neutral spine",
   });
+
+  // placeholder for voice note input in textareas
+  const [voiceNotes, setVoiceNotes] = useState<Record<number, string>>({});
+
+  // Integrate the Whisper hook (client-side WASM logic)
+  const {
+    isRecording,
+    transcript,
+    startRecording,
+    stopRecording,
+    clearTranscript
+  } = useWhisper();
+
+  // Example: store the final transcript in the text area when we stop
+  const finalizeTranscript = () => {
+    if (!isRecording) {
+      setVoiceNotes((prev) => ({
+        ...prev,
+        [currentExercise.id]: transcript,
+      }));
+      clearTranscript();
+    }
+  };
+
+  const handleVoiceNoteChange = (exerciseId: number, note: string) => {
+    setVoiceNotes((prev) => ({ ...prev, [exerciseId]: note }));
+  };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -49,10 +75,6 @@ export default function WorkoutSessionPage() {
     }
   };
 
-  const handleVoiceNoteChange = (exerciseId: number, note: string) => {
-    setVoiceNotes((prev) => ({ ...prev, [exerciseId]: note }));
-  };
-
   return (
     <div className="min-h-screen p-4 flex flex-col gap-4">
       <h1 className="text-2xl font-bold">Workout Session</h1>
@@ -61,6 +83,23 @@ export default function WorkoutSessionPage() {
         <p>Sets: {currentExercise.sets}</p>
         <p>Reps: {currentExercise.reps}</p>
         <p className="italic mb-2">{exerciseCues[currentExercise.id]}</p>
+
+        <div className="flex gap-2 items-center mb-2">
+          <button
+            className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
+            onClick={isRecording ? stopRecording : startRecording}
+          >
+            {isRecording ? "Stop Recording" : "Start Recording"}
+          </button>
+          <button
+            className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
+            onClick={finalizeTranscript}
+            disabled={isRecording}
+          >
+            Use Transcript
+          </button>
+        </div>
+
         <textarea
           className="w-full border rounded p-2 mb-2"
           rows={3}
@@ -70,6 +109,7 @@ export default function WorkoutSessionPage() {
             handleVoiceNoteChange(currentExercise.id, e.target.value)
           }
         />
+
         <div className="flex justify-between">
           <button
             className="bg-gray-300 px-3 py-1 rounded disabled:opacity-50"
