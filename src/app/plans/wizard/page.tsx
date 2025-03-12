@@ -8,6 +8,7 @@ File is responsible for the multi-step workout creation wizard of "My Workout" a
 */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface WizardData {
   name: string;
@@ -16,6 +17,8 @@ interface WizardData {
 }
 
 export default function WorkoutWizardPage() {
+  const router = useRouter();
+
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<WizardData>({
     name: "",
@@ -83,12 +86,13 @@ export default function WorkoutWizardPage() {
   };
 
   const handleSkip = () => {
-    // Optionally handle skip logic here
     handleNext();
   };
 
   const handleSubmit = () => {
     console.log("Wizard Data:", formData);
+    // After user finishes wizard, navigate to a placeholder workout session page
+    router.push("/workout/session");
   };
 
   return (

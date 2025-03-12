@@ -37,7 +37,7 @@ export default function DashboardPage() {
             View Workout Plans
           </Link>
           <Link
-            href="/plans/new"
+            href="/plans/wizard"
             className="bg-gray-200 dark:bg-gray-800 px-4 py-2 rounded text-center hover:opacity-80"
           >
             Create New Plan
